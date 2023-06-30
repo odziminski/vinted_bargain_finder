@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -21,9 +21,15 @@ if (!link) {
     try {
         await page.waitForSelector('body');
         const priceElement = await page.$x('/html/body/main/div/section/div/main/div/aside/div[1]/div[1]/div[1]/div[1]/div[1]/div/h1');
+        const userProfileLinkElement = await page.$x('/html/body/main/div/section/div/main/div/aside/div[3]/a');
+
         if (priceElement.length > 0) {
             const price = await page.evaluate(element => element.textContent, priceElement[0]);
+            const userProfileLink = await page.evaluate(element => element.getAttribute('href'), userProfileLinkElement[0]);
             console.log('Item price:', price);
+            console.log('User profile link:', userProfileLink);
+            
+            await scrapeUserProfile(page, userProfileLink);
         }
     } catch (error) {
         console.log(error);
@@ -31,3 +37,8 @@ if (!link) {
 
     await browser.close();
 })();
+
+async function scrapeUserProfile(page, link) {
+    await page.goto('https://wwww.vinted.com/' + link);
+    console.log('works!');
+}
