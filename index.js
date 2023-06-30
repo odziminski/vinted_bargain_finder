@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 const link = process.argv[2];
 
 if (!link) {
-    console.log('Podaj link jako argument.');
+    console.log('.');
     process.exit(1);
 }
 
@@ -45,7 +45,11 @@ async function scrapeUserProfile(page, link) {
     const bargainElement = await page.$x(bargainElementXPath);
     const bargain = await page.evaluate(element => element.textContent, bargainElement[0]);
 
-    console.log(bargain);
+    console.log(getBargainPercentage(bargain));
     return bargain;
-
 }
+function getBargainPercentage(bargain) {
+    const percentage = bargain.match(/\d+/);
+    return percentage ? parseInt(percentage[0]) / 100 : 0;
+}
+
