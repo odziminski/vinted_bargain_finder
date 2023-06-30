@@ -28,7 +28,7 @@ if (!link) {
             const userProfileLink = await page.evaluate(element => element.getAttribute('href'), userProfileLinkElement[0]);
             console.log('Item price:', price);
             console.log('User profile link:', userProfileLink);
-            
+
             await scrapeUserProfile(page, userProfileLink);
         }
     } catch (error) {
@@ -40,5 +40,12 @@ if (!link) {
 
 async function scrapeUserProfile(page, link) {
     await page.goto('https://wwww.vinted.com/' + link);
-    console.log('works!');
+    await page.waitForSelector('body');
+    const bargainElementXPath = '/html/body/main/div/section/div/div[2]/section/div/div/div/div/div[3]/div[1]/div/div/div/div/div/div[2]/h3';
+    const bargainElement = await page.$x(bargainElementXPath);
+    const bargain = await page.evaluate(element => element.textContent, bargainElement[0]);
+
+    console.log(bargain);
+    return bargain;
+
 }
