@@ -59,11 +59,10 @@ async function scrapeUserItems(page) {
     const priceSelector = '.title-content h3';
     const itemPrices = await page.$$eval(priceSelector, prices => prices.map(price => price.textContent));
 
-    const items = itemLinks.reduce((acc, link, index) => {
-        acc[link] = itemPrices[index];
+    return itemLinks.reduce((acc, link, index) => {
+        acc[link] = parseFloat(itemPrices[index].replace(/[^\d,.]/g, '').replace(',', '.'));
         return acc;
     }, {});
-    return items;
 }
 
 
