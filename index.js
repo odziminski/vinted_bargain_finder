@@ -35,21 +35,41 @@ if (!link) {
         console.log(error);
     }
 
-    await browser.close();
+    // await browser.close();
 })();
 
 async function scrapeUserProfile(page, link) {
-    await page.goto('https://wwww.vinted.com/' + link);
+    await page.goto('https://www.vinted.com' + link);
     await page.waitForSelector('body');
     const bargainElementXPath = '/html/body/main/div/section/div/div[2]/section/div/div/div/div/div[3]/div[1]/div/div/div/div/div/div[2]/h3';
     const bargainElement = await page.$x(bargainElementXPath);
     const bargain = await page.evaluate(element => element.textContent, bargainElement[0]);
 
     console.log(getBargainPercentage(bargain));
+
+    const items = await scrapeUserItems(page);
+    console.log(items);
+
     return bargain;
 }
+
+async function scrapeUserItems(page) {
+    const itemLinks = await page.$$eval('.feed-grid__item a', links => links.map(link => link.href));
+
+    const priceSelector = '.title-content h3';
+    const itemPrices = await page.$$eval(priceSelector, prices => prices.map(price => price.textContent));
+
+    const items = itemLinks.reduce((acc, link, index) => {
+        acc[link] = itemPrices[index];
+        return acc;
+    }, {});
+    return items;
+}
+
+
+
+
 function getBargainPercentage(bargain) {
     const percentage = bargain.match(/\d+/);
     return percentage ? parseInt(percentage[0]) / 100 : 0;
 }
-
