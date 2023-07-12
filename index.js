@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -29,7 +29,10 @@ if (!link) {
             console.log('Item price:', price);
             console.log('User profile link:', userProfileLink);
 
-            await scrapeUserProfile(page, userProfileLink);
+            const userInfo = await scrapeUserProfile(page, userProfileLink);
+            console.log(calculateMinPrice(getPriceFloatValue(price), userInfo["bargain"]))
+
+            console.log(userInfo);
         }
     } catch (error) {
         console.log(error);
@@ -43,14 +46,13 @@ async function scrapeUserProfile(page, link) {
     await page.waitForSelector('body');
     const bargainElementXPath = '/html/body/main/div/section/div/div[2]/section/div/div/div/div/div[3]/div[1]/div/div/div/div/div/div[2]/h3';
     const bargainElement = await page.$x(bargainElementXPath);
-    const bargain = await page.evaluate(element => element.textContent, bargainElement[0]);
+    const bargain = getBargainPercentage(await page.evaluate(element => element.textContent, bargainElement[0]));
+    return {'bargain': bargain, 'items': await scrapeUserItems(page)};
 
-    console.log(getBargainPercentage(bargain));
+}
 
-    const items = await scrapeUserItems(page);
-    console.log(items);
-
-    return bargain;
+function calculateMinPrice(price, bargain) {
+    return price * (1 - bargain);
 }
 
 async function scrapeUserItems(page) {
@@ -65,8 +67,15 @@ async function scrapeUserItems(page) {
     }, {});
 }
 
+function getPriceFloatValue(str) {
+    const regex = /[+-]?\d+(\.\d+)?/;
+    const match = str.match(regex);
 
-
+    if (match) {
+        return parseFloat(match[0].replace(',', '.'));
+    }
+    return NaN; 
+}
 
 function getBargainPercentage(bargain) {
     const percentage = bargain.match(/\d+/);
