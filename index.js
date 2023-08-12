@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -29,27 +29,37 @@ if (!link) {
 
             const userInfo = await scrapeUserProfile(page, userProfileLink);
             const itemPrices = Object.values(userInfo.items).sort((a, b) => a - b);
-            const bargain = userInfo.bargain;
+            const maxBargain = userInfo.bargain;
 
-            const totalPrice = getPriceFloatValue(price) * (1 - bargain);
-            const numberOfItemsNeeded = (bargain / 0.05);
-            let totalSum = 0;
+            const totalPrice = getPriceFloatValue(price);
+            const maxItems = Math.min(itemPrices.length - 1, Math.floor(maxBargain / 0.05));
 
-            for (let i = 1; i <= numberOfItemsNeeded; i++){
-                totalSum += itemPrices[i];
-                console.log(itemPrices[i]);
+            let optimalItems = 0;
+            let optimalBargain = 0;
+            let optimalPrice = totalPrice;
+
+            for (let i = 0; i <= maxItems; i++) {
+                const currentBargain = i * (maxBargain / maxItems);
+                const currentTotalPrice = (totalPrice + itemPrices.slice(1, i + 1).reduce((acc, cur) => acc + cur, 0)) * (1 - currentBargain);
+                if (currentTotalPrice < optimalPrice) {
+                    optimalPrice = currentTotalPrice;
+                    optimalItems = i + 1;
+                    optimalBargain = currentBargain;
+                }
             }
 
-
-
-            console.log('Total sum of', numberOfItemsNeeded, 'cheapest items:', totalSum);
-
+            if (optimalItems > 0) {
+                console.log(`Optimal configuration: ${optimalItems} item(s) with ${Math.round(optimalBargain * 100)}% discount.`);
+                console.log(`Total price: ${optimalPrice}`);
+            } else {
+                console.log('There is no option to make your item cheaper.');
+            }
         }
     } catch (error) {
         console.log(error);
+    } finally {
+        await browser.close();
     }
-
-    await browser.close();
 })();
 
 async function scrapeUserProfile(page, link) {
