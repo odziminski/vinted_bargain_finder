@@ -26,7 +26,6 @@ if (!link) {
             const price = await page.evaluate(element => element.textContent, priceElement[0]);
             const userProfileLink = await page.evaluate(element => element.getAttribute('href'), userProfileLinkElement[0]);
             console.log('Item price:', price);
-            console.log('User profile link:', userProfileLink);
 
             const userInfo = await scrapeUserProfile(page, userProfileLink);
             const itemPrices = Object.values(userInfo.items).sort((a, b) => a - b);
@@ -34,7 +33,16 @@ if (!link) {
 
             const totalPrice = getPriceFloatValue(price) * (1 - bargain);
             const numberOfItemsNeeded = (bargain / 0.05);
-            console.log(totalPrice);
+            let totalSum = 0;
+
+            for (let i = 1; i <= numberOfItemsNeeded; i++){
+                totalSum += itemPrices[i];
+                console.log(itemPrices[i]);
+            }
+
+
+
+            console.log('Total sum of', numberOfItemsNeeded, 'cheapest items:', totalSum);
 
         }
     } catch (error) {
