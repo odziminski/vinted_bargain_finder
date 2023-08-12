@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -16,9 +16,8 @@ if (!link) {
         'Accept-Language': 'en-US,en;q=0.9',
     });
 
-    await page.goto(link);
-
     try {
+        await page.goto(link);
         await page.waitForSelector('body');
         const priceElement = await page.$x('/html/body/main/div/section/div/main/div/aside/div[1]/div[1]/div[1]/div[1]/div[1]/div/h1');
         const userProfileLinkElement = await page.$x('/html/body/main/div/section/div/main/div/aside/div[3]/a');
@@ -30,15 +29,19 @@ if (!link) {
             console.log('User profile link:', userProfileLink);
 
             const userInfo = await scrapeUserProfile(page, userProfileLink);
-            console.log(calculateMinPrice(getPriceFloatValue(price), userInfo["bargain"]))
+            const itemPrices = Object.values(userInfo.items).sort((a, b) => a - b);
+            const bargain = userInfo.bargain;
 
-            console.log(userInfo);
+            const totalPrice = getPriceFloatValue(price) * (1 - bargain);
+            const numberOfItemsNeeded = (bargain / 0.05);
+            console.log(totalPrice);
+
         }
     } catch (error) {
         console.log(error);
     }
 
-    // await browser.close();
+    await browser.close();
 })();
 
 async function scrapeUserProfile(page, link) {
@@ -48,11 +51,6 @@ async function scrapeUserProfile(page, link) {
     const bargainElement = await page.$x(bargainElementXPath);
     const bargain = getBargainPercentage(await page.evaluate(element => element.textContent, bargainElement[0]));
     return {'bargain': bargain, 'items': await scrapeUserItems(page)};
-
-}
-
-function calculateMinPrice(price, bargain) {
-    return price * (1 - bargain);
 }
 
 async function scrapeUserItems(page) {
@@ -74,7 +72,7 @@ function getPriceFloatValue(str) {
     if (match) {
         return parseFloat(match[0].replace(',', '.'));
     }
-    return NaN; 
+    return NaN;
 }
 
 function getBargainPercentage(bargain) {
