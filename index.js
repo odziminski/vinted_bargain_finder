@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({headless: "new"});
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -29,6 +29,7 @@ if (!link) {
 
             const userInfo = await scrapeUserProfile(page, userProfileLink);
             const itemPrices = Object.values(userInfo.items).sort((a, b) => a - b);
+            console.log('Number of items:', Object.keys(userInfo.items).length);
             const maxBargain = userInfo.bargain;
 
             const totalPrice = getPriceFloatValue(price);
@@ -58,7 +59,7 @@ if (!link) {
     } catch (error) {
         console.log(error);
     } finally {
-        await browser.close();
+        // await browser.close();
     }
 })();
 
@@ -72,6 +73,12 @@ async function scrapeUserProfile(page, link) {
 }
 
 async function scrapeUserItems(page) {
+    try {
+        await autoScroll(page);
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+
     const itemLinks = await page.$$eval('.feed-grid__item a', links => links.map(link => link.href));
 
     const priceSelector = '.title-content h3';
@@ -81,6 +88,25 @@ async function scrapeUserItems(page) {
         acc[link] = parseFloat(itemPrices[index].replace(/[^\d,.]/g, '').replace(',', '.'));
         return acc;
     }, {});
+}
+
+async function autoScroll(page) {
+    await page.evaluate(async () => {
+        await new Promise((resolve, reject) => {
+            let totalHeight = 0;
+            const distance = 200;
+            const timer = setInterval(() => {
+                const scrollHeight = document.documentElement.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                if (totalHeight >= scrollHeight) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 70);
+        });
+    });
 }
 
 function getPriceFloatValue(str) {
