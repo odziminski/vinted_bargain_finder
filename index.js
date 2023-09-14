@@ -8,7 +8,7 @@ if (!link) {
 }
 
 (async () => {
-    const browser = await puppeteer.launch({headless: "new"});
+    const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
@@ -74,7 +74,7 @@ async function scrapeUserProfile(page, link) {
 
 async function scrapeUserItems(page) {
     try {
-        await autoScroll(page);
+        await applyPriceLowToHighSort(page);
     } catch (error) {
         console.error('An error occurred:', error);
     }
@@ -90,23 +90,29 @@ async function scrapeUserItems(page) {
     }, {});
 }
 
-async function autoScroll(page) {
-    await page.evaluate(async () => {
-        await new Promise((resolve, reject) => {
-            let totalHeight = 0;
-            const distance = 200;
-            const timer = setInterval(() => {
-                const scrollHeight = document.documentElement.scrollHeight;
-                window.scrollBy(0, distance);
-                totalHeight += distance;
+async function applyPriceLowToHighSort(page) {
+    const firstButtonXPath = '/html/body/div[13]/div/div/div/div[1]/div/div[3]/button';
+    const secondButtonXPath = '/html/body/div[26]/div[2]/div/div[1]/div/div[2]/div/button[1]';
+    const sortButtonXPath = '/html/body/main/div/section/div/div[2]/section/div/div/div/div/div[3]/div[2]/div/div[2]/div[2]/div[2]/div/button';
 
-                if (totalHeight >= scrollHeight) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, 70);
-        });
-    });
+    const [firstButton] = await page.$x(firstButtonXPath);
+    await firstButton.click();
+
+    const [secondButton] = await page.$x(secondButtonXPath);
+    await secondButton.click();
+    await page.waitForTimeout(2000);
+
+    const [sortButton] = await page.$x(sortButtonXPath);
+    await sortButton.click();
+
+    await page.waitForTimeout(2000);
+
+
+    const thirdListItemXPath = '/html/body/main/div/section/div/div[2]/section/div/div/div/div/div[3]/div[2]/div/div[2]/div[2]/div[2]/div/div/div/div/ul/li[3]/div';
+    await page.waitForXPath(thirdListItemXPath);
+
+    const [thirdListItem] = await page.$x(thirdListItemXPath);
+    await thirdListItem.click();
 }
 
 function getPriceFloatValue(str) {
